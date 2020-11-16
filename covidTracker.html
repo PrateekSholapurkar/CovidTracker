@@ -1,0 +1,22 @@
+<template>
+    <div class="spinner">
+        <template if:true={isLoading}>
+             <lightning-spinner alternative-text="Loading" variant="brand" size="large">
+             </lightning-spinner>
+        </template>
+    </div>
+    
+    
+    
+    <div class="slds-p-around_small">
+    <div class="slds-align_absolute-center slds-p-around_small" style="font-size: 30px ;font-weight : bold;">Covid Tracker</div>
+    <lightning-datatable 
+    key-field="District" 
+    data={covidData} 
+    columns={covidColumns}
+    hide-checkbox-column
+    show-row-number-column
+    >
+</lightning-datatable>
+</div>
+</template>
