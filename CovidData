@@ -1,0 +1,89 @@
+public class CovidData {
+   
+/*The JSON that we will get from API,
+we will break it according to state
+so we will have 1 state Wrapper for each state
+*/
+
+public class StateWrapper{
+
+    @AuraEnabled public string stateName;
+    @AuraEnabled public string stateCode;
+    @AuraEnabled public List<DistrictWrapper> districtWrapperList;
+}
+
+
+//One District wrapper for each district
+public class DistrictWrapper{
+    @AuraEnabled public string districtName;
+    @AuraEnabled public String confirmed;
+    @AuraEnabled public string deceased;
+    @AuraEnabled public string recovered;
+    @AuraEnabled public string active;
+    @AuraEnabled public string notes;
+    @AuraEnabled public deltaWrapper districtDelta;
+}
+
+public class DeltaWrapper{
+    @AuraEnabled public String confirmed;
+    @AuraEnabled public String deceased;
+    @AuraEnabled public string recovered;
+}
+
+
+@AuraEnabled(cacheable=true)
+public static List<StateWrapper>  getCovidData(){
+    HTTP h = new HTTP();
+    HTTPRequest req = new HTTPRequest();
+
+    req.setEndPoint('https://api.covid19india.org/state_district_wise.json');
+    req.setMethod('GET');
+
+    HTTPResponse res = h.send(req);
+
+    Map<string,object>  jsonBody = (Map<string,object>)Json.deserializeUntyped(res.getBody());
+    List<StateWrapper> stateWrprList = new  List<StateWrapper>();
+    for(String statename : jsonBody.keyset()){
+        StateWrapper stateWrpr = new StateWrapper();
+        stateWrpr.stateName = statename;
+        List<DistrictWrapper> districtWrprList = new List<DistrictWrapper>();
+         //stateWrpr.stateCode = lets see;
+        Map<string,object>  districtNamevsInfo = (Map<string,object>) jsonBody.get(statename);
+        Map<string,object>  dis = (Map<string,object>) districtNamevsInfo.get('districtData');
+        for(String districtName : dis.keyset()){
+            DistrictWrapper districtWrpr = new DistrictWrapper();
+            districtWrpr.districtName = districtName;
+            Map<string,object>  eachdis = (Map<string,object>) dis.get(districtName);
+            for(String insidedis : eachdis.keyset()){
+                if(insidedis == 'active'){
+                    Integer activeNumbers = (Integer) eachdis.get(insidedis);
+                    districtWrpr.active = String.valueOf(activeNumbers); 
+                }
+                if(insidedis == 'confirmed'){
+                    Integer confirmedNumbers = (Integer) eachdis.get(insidedis);
+                    districtWrpr.confirmed =String.valueOf(confirmedNumbers);
+                }
+                if(insidedis == 'deceased'){
+                    Integer deceasedNumbers = (Integer) eachdis.get(insidedis);
+                    districtWrpr.deceased = String.valueOf(deceasedNumbers);
+                }
+                if(insidedis == 'recovered'){
+                    Integer recoveredNumbers = (Integer) eachdis.get(insidedis);
+                    districtWrpr.recovered = String.valueOf(recoveredNumbers);
+                }
+                if(insidedis == 'notes'){
+                    String notes = (String) eachdis.get(insidedis);
+                    districtWrpr.notes = notes;
+                }
+            }
+            districtWrprList.add(districtWrpr);
+        }
+        stateWrpr.districtWrapperList = districtWrprList;
+        stateWrprList.add(stateWrpr);
+        }
+        return stateWrprList;
+    }
+    
+
+
+}
